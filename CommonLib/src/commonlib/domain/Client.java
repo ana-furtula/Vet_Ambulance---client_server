@@ -14,7 +14,7 @@ import java.util.Objects;
  *
  * @author ANA
  */
-public class Client implements Serializable{
+public class Client implements Serializable, ModelElement{
 
     private Long id;
     private String firstName;
@@ -95,6 +95,52 @@ public class Client implements Serializable{
     @Override
     public String toString() {
         return firstName + " " + lastName + ", JMBG: " + JMBG;
+    }
+    
+    @Override
+    public String getAtrValues() {
+        return "'" + firstName + "'" +", " + lastName + ", " + "'" + JMBG +"'";
+    }
+
+    @Override
+    public String setAtrValues() {
+        return "firstname = " + "'" +firstName + "'" + ", " + "lastname = " + "'" +lastName + "'" + ", " + "jmbg = " + "'" +JMBG + "'" ; 
+    }
+
+    @Override
+    public String getDbChangeableColumns() {
+        return "firstname, lastname, jmbg";
+    }
+    
+    @Override
+    public String getTableName() {
+        return "clients";
+    }
+
+    @Override
+    public String getWhereCondition() {
+        return "id= "+id;
+    }
+
+    @Override
+    public String getNameByColumn(int column) {
+        String[] names = new String[]{"id","firstname","lastname","jmbg"};
+        return names[column];
+    }
+
+    @Override
+    public ModelElement getNewRecord(ResultSet rs) throws SQLException {
+        Client client = new Client();
+        client.setId(rs.getLong("id"));
+        client.setFirstName(rs.getString("firstname"));
+        client.setLastName(rs.getString("lastname"));
+        client.setJMBG(rs.getString("jmbg"));
+        return client;
+    }
+
+    @Override
+    public void setId(ResultSet rs) throws Exception {
+        this.id = rs.getLong(1);
     }
 
 }

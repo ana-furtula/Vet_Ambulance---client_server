@@ -15,7 +15,7 @@ import java.util.Objects;
  *
  * @author ANA
  */
-public class Operation implements Serializable{
+public class Operation implements Serializable, ModelElement{
 
     private Long id;
     private String name;
@@ -90,6 +90,51 @@ public class Operation implements Serializable{
 
     public void setPrice(BigDecimal Price) {
         this.price = Price;
+    }
+    
+    @Override
+    public String getAtrValues() {
+        return "'" + name + "'" +", " + price;
+    }
+
+    @Override
+    public String setAtrValues() {
+        return "name = " + "'" +name + "'" + ", " + "price = "+ price;
+    }
+
+    @Override
+    public String getDbChangeableColumns() {
+        return "name, price";
+    }
+    
+    @Override
+    public String getTableName() {
+        return "operations";
+    }
+
+    @Override
+    public String getWhereCondition() {
+        return "id= "+id;
+    }
+
+    @Override
+    public String getNameByColumn(int column) {
+        String[] names = new String[]{"id","name","price"};
+        return names[column];
+    }
+
+    @Override
+    public ModelElement getNewRecord(ResultSet rs) throws SQLException {
+        Operation o = new Operation();
+        o.setId(rs.getLong("id"));
+        o.setName(rs.getString("name"));
+        o.setPrice(rs.getBigDecimal("price"));
+        return o;
+    }
+    
+     @Override
+    public void setId(ResultSet rs) throws Exception {
+        this.id = rs.getLong(1);
     }
 
 }

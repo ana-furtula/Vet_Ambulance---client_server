@@ -7,16 +7,20 @@ package commonlib.domain;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  *
  * @author ANA
  */
-public class Invoice implements Serializable{
+public class Invoice implements Serializable, ModelElement {
 
     private long id;
     private LocalDate date;
@@ -149,6 +153,47 @@ public class Invoice implements Serializable{
     @Override
     public String toString() {
         return "Invoice{" + "id=" + id + ", date=" + date + ", totalValue=" + totalValue + ", processed=" + processed + ", client=" + client + ", employee=" + employee + '}';
+    }
+
+    @Override
+    public String getAtrValues() {
+        return "'" + Date.valueOf(date) + "'" + ", " + totalValue + ", " + "'" + String.valueOf(processed) + "'" + ", " + client.getId() + ", " + employee.getId();
+    }
+
+    @Override
+    public String setAtrValues() {
+        return "employeeId = " + employee.getId() + ", " + "totalValue = " + totalValue + ", " + " processed = " + "'" + String.valueOf(processed) + "'";
+    }
+
+    @Override
+    public String getDbChangeableColumns() {
+        return "date, totalValue, processed, clientId, employeeId";
+    }
+
+    @Override
+    public String getTableName() {
+        return "invoices";
+    }
+
+    @Override
+    public String getWhereCondition() {
+        return "id= " + id;
+    }
+
+    @Override
+    public String getNameByColumn(int column) {
+        String[] names = new String[]{"id", "date", "totalValue", "processed", "clientId", "employeeId"};
+        return names[column];
+    }
+
+    @Override
+    public ModelElement getNewRecord(ResultSet rs) throws SQLException {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public void setId(ResultSet rs) throws Exception {
+        this.id = rs.getLong(1);
     }
 
 }

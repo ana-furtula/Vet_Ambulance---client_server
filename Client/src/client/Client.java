@@ -16,6 +16,10 @@ import commonlib.communication.Receiver;
 import commonlib.communication.Request;
 import commonlib.communication.Response;
 import commonlib.communication.Sender;
+import commonlib.domain.Invoice;
+import commonlib.domain.Medicine;
+import commonlib.domain.ModelElement;
+import commonlib.domain.Operation;
 import commonlib.exception.ServerStoppedException;
 import static java.lang.Thread.sleep;
 import java.util.List;
@@ -85,22 +89,42 @@ class ThreadListener extends Thread {
                 sender.send(request);
                 Controller.getInstance().finish();
                 this.interrupt();
-            } else{
-                NotificationResponse notification = (NotificationResponse)response.getNotification();
-                if(notification.getNewMedicine()!=null){
-                    Controller.getInstance().notifyNewMedicine(notification.getNewMedicine());
+            } else {
+                NotificationResponse notification = (NotificationResponse) response.getNotification();
+                for (ModelElement newElement : notification.getNewElements()) {
+                    if (newElement instanceof Medicine) {
+                        Controller.getInstance().notifyNewMedicine((Medicine) newElement);
+                        continue;
+                    }
+                    if (newElement instanceof Invoice) {
+                        Controller.getInstance().notifyNewInvoice((Invoice) newElement);
+                        continue;
+                    }
+                    if (newElement instanceof Operation) {
+                        Controller.getInstance().notifyNewOperation((Operation) newElement);
+                    }
                 }
-                if(notification.getChangedInvoice()!=null){
-                    Controller.getInstance().notifyChangedInvoice(notification.getChangedInvoice());
+                for (ModelElement changedElement : notification.getChangedElements()) {
+                    if (changedElement instanceof Medicine) {
+                        Controller.getInstance().notifyChangedMedicine((Medicine) changedElement);
+                        continue;
+                    }
+                    if (changedElement instanceof Invoice) {
+                        Controller.getInstance().notifyChangedInvoice((Invoice) changedElement);
+                        continue;
+                    }
+                    if (changedElement instanceof Operation) {
+                        Controller.getInstance().notifyChangedOperation((Operation) changedElement);
+                    }
                 }
-                if(notification.getNewInvoice()!=null){
-                    Controller.getInstance().notifyNewInvoice(notification.getNewInvoice());
-                }
-                if(notification.getChangedMedicine()!=null){
-                    Controller.getInstance().notifyChangedMedicine(notification.getChangedMedicine());
-                }
-                if(notification.getDeletedMedicine()!=null){
-                    Controller.getInstance().notifyDeletedMedicine(notification.getDeletedMedicine());
+                for (ModelElement deletedElement : notification.getDeletedElements()) {
+                    if (deletedElement instanceof Medicine) {
+                        Controller.getInstance().notifyDeletedMedicine((Medicine) deletedElement);
+                        continue;
+                    }
+                    if (deletedElement instanceof Operation) {
+                        Controller.getInstance().notifyDeletedOperation((Operation) deletedElement);
+                    }
                 }
             }
         } catch (Exception ex) {

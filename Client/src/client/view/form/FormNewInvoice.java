@@ -5,6 +5,7 @@
  */
 package client.view.form;
 
+import client.listeners.NotificationListener;
 import client.validation.ValidationException;
 import client.validation.Validator;
 import client.view.components.PanelInvoiceItemMedicine;
@@ -32,7 +33,6 @@ public class FormNewInvoice extends javax.swing.JDialog {
 
     private PanelInvoiceItemMedicine pnlMedicine;
     private PanelInvoiceItemOperation pnlOperation;
-    private JDatePickerImpl datePicker;
     private Invoice invoice;
 
     /**
@@ -306,16 +306,22 @@ public class FormNewInvoice extends javax.swing.JDialog {
                         .validateNotNullOrEmpty(quantity, "Količina je obavezno polje. ")
                         .validateValueIsNumber(quantity, "Količina mora biti broj.")
                         .throwIfInvalide();
-                BigDecimal leftQuantity = medicine.getAvailableQuantity().subtract(new BigDecimal(quantity));
-                if(leftQuantity.compareTo(BigDecimal.ZERO)<0){
-                    JOptionPane.showMessageDialog(this, "Nema dovoljno količine lijeka " + medicine.getName() + " na zalihama.","Greška", JOptionPane.ERROR_MESSAGE);
+                BigDecimal qu = new BigDecimal(quantity);
+                if (qu.compareTo(BigDecimal.ZERO) <= 0) {
+                    JOptionPane.showMessageDialog(this, "Količina mora biti veća od nule.", "Greška", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                medicine.setAvailableQuantity(leftQuantity);
+                BigDecimal leftQuantity = medicine.getAvailableQuantity().subtract(qu);
+                if (leftQuantity.compareTo(BigDecimal.ZERO) < 0) {
+                    JOptionPane.showMessageDialog(this, "Nema dovoljno količine lijeka " + medicine.getName() + " na zalihama.", "Greška", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                pnlMedicine.updateAvailableQuantity(leftQuantity, medicine);
                 InvoiceItem item = new InvoiceItem();
                 item.setMedicine(medicine);
                 BigDecimal quant = new BigDecimal(quantity);
-                item.setPrice(quant.multiply(medicine.getPrice()));
+                item.setTotalPrice(quant.multiply(medicine.getPrice()));
+                item.setItemPrice(medicine.getPrice());
                 item.setQuantity(quant);
                 item.setInvoice(invoice);
 
@@ -333,7 +339,8 @@ public class FormNewInvoice extends javax.swing.JDialog {
                 Operation operation = pnlOperation.getSelectedOperation();
                 InvoiceItem item = new InvoiceItem();
                 item.setOperation(operation);
-                item.setPrice(operation.getPrice());
+                item.setTotalPrice(operation.getPrice());
+                item.setItemPrice(operation.getPrice());
                 item.setQuantity(BigDecimal.ONE);
                 item.setInvoice(invoice);
 
@@ -351,8 +358,12 @@ public class FormNewInvoice extends javax.swing.JDialog {
         int selected = tblInvoiceItems.getSelectedRow();
         if (selected != -1) {
             TableModelInvoiceItems tm = (TableModelInvoiceItems) tblInvoiceItems.getModel();
+            InvoiceItem item = tm.getDataForRow(selected);
             tm.removeInvoiceItem(selected);
             txtTotalValue.setText(invoice.getTotalValue().toString());
+            if (item.getMedicine() != null) {
+                pnlMedicine.updateAvailableQuantity(pnlMedicine.getAvailableQuantity(item.getMedicine()).add(item.getQuantity()), item.getMedicine());
+            }
         } else {
             JOptionPane.showMessageDialog(this, "Potrebno je selektovati stavku računa koju želite da obrišete", "Greška", JOptionPane.ERROR_MESSAGE);
         }

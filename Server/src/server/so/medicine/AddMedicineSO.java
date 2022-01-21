@@ -7,6 +7,7 @@ package server.so.medicine;
 
 import commonlib.domain.Medicine;
 import server.repository.db.DbRepository;
+import server.repository.db.impl.Repository;
 import server.repository.db.impl.RepositoryMedicine;
 import server.so.AbstractSO;
 import server.validation.ValidationException;
@@ -19,9 +20,11 @@ import server.validation.Validator;
 public class AddMedicineSO extends AbstractSO {
 
     private final DbRepository repositoryMedicine;
+    private final DbRepository repository;
 
     public AddMedicineSO() {
         this.repositoryMedicine = new RepositoryMedicine();
+        repository = new Repository();
     }
 
     @Override
@@ -42,17 +45,20 @@ public class AddMedicineSO extends AbstractSO {
 
     @Override
     protected void executeTransaction(Object param) throws Exception {
-        repositoryMedicine.add((Medicine) param);
+//        repositoryMedicine.add((Medicine) param);
+        repository.add((Medicine) param);
     }
 
     @Override
     protected void commitTransaction() throws Exception {
-        repositoryMedicine.commit();
+//        repositoryMedicine.commit();
+        repository.commit();
     }
 
     @Override
     protected void rollbackTransaction() throws Exception {
         repositoryMedicine.rollback();
+        repository.rollback();
     }
 
 }

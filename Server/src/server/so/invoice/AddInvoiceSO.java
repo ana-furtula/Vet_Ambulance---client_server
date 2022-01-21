@@ -9,6 +9,7 @@ import commonlib.domain.Invoice;
 import commonlib.domain.InvoiceItem;
 import server.so.medicine.*;
 import server.repository.db.DbRepository;
+import server.repository.db.impl.Repository;
 import server.repository.db.impl.RepositoryInvoice;
 import server.so.AbstractSO;
 import server.validation.ValidationException;
@@ -23,7 +24,7 @@ public class AddInvoiceSO extends AbstractSO {
     private final DbRepository repositoryInvoice;
 
     public AddInvoiceSO() {
-        this.repositoryInvoice = new RepositoryInvoice();
+        this.repositoryInvoice = new Repository();
     }
 
     @Override
@@ -37,14 +38,22 @@ public class AddInvoiceSO extends AbstractSO {
                     .validateNotNull(invoice.getClient(), "Neophodno je unijeti klijenta.")
                     .validateNotNull(invoice.getEmployee(), "Neophodno je unijeti zaposlenog koji je izdao racun.")
                     .validatePrice(invoice.getTotalValue(), "Cijena ne može biti manja od 0.").throwIfInvalide();
+            if(invoice.getItems()==null || invoice.getItems().size()==0){
+                throw new Exception("Račun mora sadržati barem jednu stavku.");
+            }
+            checkAvailableQuantities((Invoice)param);
         } catch (ValidationException e) {
+            e.printStackTrace();
             throw e;
         }
     }
 
     @Override
     protected void executeTransaction(Object param) throws Exception {
-        repositoryInvoice.add((Invoice) param);
+        repositoryInvoice.add((Invoice)param);
+        for ( InvoiceItem item : ((Invoice)param).getItems()) {
+            repositoryInvoice.add(item);
+        }
         updateMedicinesQuantities((Invoice) param);
     }
 
@@ -56,6 +65,15 @@ public class AddInvoiceSO extends AbstractSO {
     @Override
     protected void rollbackTransaction() throws Exception {
         repositoryInvoice.rollback();
+    }
+    
+    private void checkAvailableQuantities(Invoice invoice) throws Exception {
+        AbstractSO checkAvailableQuantitySO = new CheckAvailableQuantitySO();
+        for (InvoiceItem item : invoice.getItems()) {
+            if (item.getMedicine() != null) {
+                checkAvailableQuantitySO.execute(item);
+            }
+        }
     }
 
     private void updateMedicinesQuantities(Invoice invoice) throws Exception {

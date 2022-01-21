@@ -5,7 +5,9 @@
  */
 package server.so.medicine;
 
+import commonlib.domain.InvoiceItem;
 import commonlib.domain.Medicine;
+import java.math.BigDecimal;
 import server.repository.db.DbRepository;
 import server.repository.db.impl.RepositoryMedicine;
 import server.so.AbstractSO;
@@ -16,8 +18,9 @@ import server.validation.Validator;
  *
  * @author ANA
  */
-public class UpdateAvailableQuantitySO extends AbstractSO{
-     private final RepositoryMedicine repositoryMedicine;
+public class UpdateAvailableQuantitySO extends AbstractSO {
+
+    private final RepositoryMedicine repositoryMedicine;
 
     public UpdateAvailableQuantitySO() {
         this.repositoryMedicine = new RepositoryMedicine();
@@ -31,10 +34,9 @@ public class UpdateAvailableQuantitySO extends AbstractSO{
         Medicine medicine = (Medicine) param;
         try {
             Validator.startValidation()
-                    .validateNotNullOrEmpty(medicine.getName(), "Lijek mora imati naziv.")
-                    .validateQuantity(medicine.getAvailableQuantity(), "Dostupna količina ne može biti manja od 0.")
-                    .validatePrice(medicine.getPrice(), "Cijena ne može biti manja od 0.").throwIfInvalide();
+                    .validateNotNull(medicine.getId(), "ID lijeka mora biti definisan.").throwIfInvalide();
         } catch (ValidationException e) {
+            e.printStackTrace();
             throw e;
         }
     }
@@ -53,4 +55,5 @@ public class UpdateAvailableQuantitySO extends AbstractSO{
     protected void rollbackTransaction() throws Exception {
         repositoryMedicine.rollback();
     }
+
 }

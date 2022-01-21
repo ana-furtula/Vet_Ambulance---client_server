@@ -9,6 +9,7 @@ import server.so.medicine.*;
 import commonlib.domain.Medicine;
 import commonlib.domain.Operation;
 import server.repository.db.DbRepository;
+import server.repository.db.impl.Repository;
 import server.repository.db.impl.RepositoryMedicine;
 import server.repository.db.impl.RepositoryOperation;
 import server.so.AbstractSO;
@@ -24,7 +25,7 @@ public class UpdateOperationSO extends AbstractSO{
     private final DbRepository repositoryOperation;
 
     public UpdateOperationSO() {
-        this.repositoryOperation = new RepositoryOperation();
+        this.repositoryOperation = new Repository();
     }
 
     @Override

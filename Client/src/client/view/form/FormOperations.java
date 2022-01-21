@@ -5,6 +5,7 @@
  */
 package client.view.form;
 
+import client.listeners.NotificationListener;
 import client.validation.ValidationException;
 import client.validation.Validator;
 import client.view.controller.Controller;
@@ -26,6 +27,42 @@ public class FormOperations extends javax.swing.JDialog {
     public FormOperations(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
+
+        Controller.getInstance().setNotificationListener(new NotificationListener() {
+            @Override
+            public void changedOperation(Operation operation) {
+                if (txtId.getText().equals(operation.getId().toString())) {
+                    txtName.setText(operation.getName());
+                    txtPrice.setText(operation.getPrice().toString());
+                    lblMessage.setText("IZMIJENJENA");
+                    Timer timer = new Timer();
+                    timer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            lblMessage.setText("");
+                        }
+                    }, 5000);
+                }
+            }
+
+            @Override
+            public void deletedOperation(Operation operation) {
+                if (txtId.getText().equals(operation.getId().toString())) {
+                    txtId.setText("");
+                    txtName.setText("");
+                    txtPrice.setText("");
+                    lblMessage.setText("OBRISANA");
+                    Timer timer = new Timer();
+                    timer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            lblMessage.setText("");
+                        }
+                    }, 5000);
+                }
+            }
+        });
+
         setLocationRelativeTo(parent);
     }
 

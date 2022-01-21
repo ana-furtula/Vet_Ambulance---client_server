@@ -8,6 +8,8 @@ package client.view.form;
 import client.listeners.NotificationListener;
 import client.view.components.TableModelMedicines;
 import client.view.controller.Controller;
+import commonlib.domain.Invoice;
+import commonlib.domain.InvoiceItem;
 import commonlib.domain.MeasurementUnit;
 import commonlib.domain.Medicine;
 import java.awt.Color;
@@ -16,8 +18,6 @@ import java.awt.event.FocusListener;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -50,7 +50,13 @@ public class FormMedicinesView extends javax.swing.JDialog {
             public void newMedicineAdded(Medicine medicine) {
                 try {
                     TableModelMedicines model = (TableModelMedicines) tblMedicines.getModel();
-                    model.add(medicine);
+                    if(!txtSearch.getText().equals("Pretraga po nazivu")){
+                        if(medicine.getName().startsWith(txtSearch.getText())){
+                            model.add(medicine);
+                        }
+                    }else{
+                        model.add(medicine);
+                    }
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -75,6 +81,48 @@ public class FormMedicinesView extends javax.swing.JDialog {
                     ex.printStackTrace();
                 }
             }
+
+            @Override
+            public void invoiceChanged(Invoice invoice) {
+                try {
+                    TableModelMedicines model = (TableModelMedicines) tblMedicines.getModel();
+                    for (InvoiceItem item : invoice.getItems()) {
+                        if (item.getMedicine() != null) {
+                            for (Medicine medicine : model.getMedicines()) {
+                                if (medicine.getId().equals(item.getMedicine().getId())) {
+                                    medicine.setAvailableQuantity(item.getMedicine().getAvailableQuantity());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    model.fireTableDataChanged();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void newInvoiceAdded(Invoice invoice) {
+                try {
+                    TableModelMedicines model = (TableModelMedicines) tblMedicines.getModel();
+                    for (InvoiceItem item : invoice.getItems()) {
+                        if (item.getMedicine() != null) {
+                            for (Medicine medicine : model.getMedicines()) {
+                                if (medicine.getId().equals(item.getMedicine().getId())) {
+                                    medicine.setAvailableQuantity(item.getMedicine().getAvailableQuantity());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    model.fireTableDataChanged();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+            
+            
 
         });
 

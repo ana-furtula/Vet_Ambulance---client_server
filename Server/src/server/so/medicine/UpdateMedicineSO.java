@@ -7,6 +7,7 @@ package server.so.medicine;
 
 import commonlib.domain.Medicine;
 import server.repository.db.DbRepository;
+import server.repository.db.impl.Repository;
 import server.repository.db.impl.RepositoryMedicine;
 import server.so.AbstractSO;
 import server.validation.ValidationException;
@@ -21,7 +22,7 @@ public class UpdateMedicineSO extends AbstractSO{
     private final DbRepository repositoryMedicine;
 
     public UpdateMedicineSO() {
-        this.repositoryMedicine = new RepositoryMedicine();
+        this.repositoryMedicine = new Repository();
     }
 
     @Override

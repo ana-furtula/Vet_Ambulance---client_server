@@ -8,6 +8,7 @@ package server.threads;
 import commonlib.domain.Employee;
 import commonlib.domain.Invoice;
 import commonlib.domain.Medicine;
+import commonlib.domain.Operation;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -117,6 +118,14 @@ public class ServerThread extends Thread {
             }
         }
     }
+    
+    void notifyNewOperation(HandleClientThread aThis, Operation operation) {
+        for (HandleClientThread client : clients) {
+            if (client != aThis) {
+                client.notifyNewOperation(operation);
+            }
+        }
+    }
 
     void notifyNewInvoice(HandleClientThread aThis, Invoice invoice) {
         for (HandleClientThread client : clients) {
@@ -140,10 +149,26 @@ public class ServerThread extends Thread {
         }
     }
     
+    void notifyChangedOperation(HandleClientThread aThis, Operation operation) {
+        for (HandleClientThread client : clients) {
+            if (client != aThis) {
+                client.notifyChangedOperation(operation);
+            }
+        }
+    }
+    
     void notifyDeletedMedicine(HandleClientThread aThis, Medicine medicine) {
         for (HandleClientThread client : clients) {
             if (client != aThis) {
                 client.notifyDeletedMedicine(medicine);
+            }
+        }
+    }
+    
+    void notifyDeletedOperation(HandleClientThread aThis, Operation operation) {
+        for (HandleClientThread client : clients) {
+            if (client != aThis) {
+                client.notifyDeletedOperation(operation);
             }
         }
     }

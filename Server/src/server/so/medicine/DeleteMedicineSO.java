@@ -7,6 +7,7 @@ package server.so.medicine;
 
 import commonlib.domain.Medicine;
 import server.repository.db.DbRepository;
+import server.repository.db.impl.Repository;
 import server.repository.db.impl.RepositoryMedicine;
 import server.so.AbstractSO;
 
@@ -18,7 +19,7 @@ public class DeleteMedicineSO extends AbstractSO{
     private final DbRepository repositoryMedicine;
 
     public DeleteMedicineSO() {
-        this.repositoryMedicine = new RepositoryMedicine();
+        this.repositoryMedicine = new Repository();
     }
     
     @Override

@@ -294,8 +294,10 @@ public class HandleClientThread extends Thread {
         Response response = new Response();
         {
             try {
-                Controller.getInstance().deleteOperation((Operation) request.getArgument());
+                Operation operation = (Operation) request.getArgument();
+                Controller.getInstance().deleteOperation(operation);
                 response.setResponseType(ResponseType.SUCCESS);
+                server.notifyDeletedOperation(this, operation);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 response.setException(new Exception(ex.getMessage()));
@@ -313,6 +315,7 @@ public class HandleClientThread extends Thread {
                 Controller.getInstance().addOperation(operation);
                 response.setResponseType(ResponseType.SUCCESS);
                 response.setResult(operation);
+                server.notifyNewOperation(this, operation);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 response.setException(new Exception(ex.getMessage()));
@@ -329,6 +332,7 @@ public class HandleClientThread extends Thread {
                 Operation operation = (Operation) request.getArgument();
                 Controller.getInstance().updateOperation(operation);
                 response.setResponseType(ResponseType.SUCCESS);
+                server.notifyChangedOperation(this, operation);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 response.setException(new Exception(ex.getMessage()));
@@ -462,23 +466,34 @@ public class HandleClientThread extends Thread {
     }
 
     void notifyNewMedicine(Medicine medicine) {
-        notification.setNewMedicine(medicine);
+        notification.addNewElement(medicine);
     }
 
     void notifyNewInvoice(Invoice invoice) {
-        notification.setNewInvoice(invoice);
+        notification.addNewElement(invoice);
     }
 
     void notifyChangedInvoice(Invoice invoice) {
-        notification.setChangedInvoice(invoice);
+        notification.addChangedElement(invoice);
     }
 
     void notifyChangedMedicine(Medicine medicine) {
-        Employee emp = this.employee;
-        notification.setChangedMedicine(medicine);
+        notification.addChangedElement(medicine);
     }
 
     void notifyDeletedMedicine(Medicine medicine) {
-        notification.setDeletedMedicine(medicine);
+        notification.addDeletedElement(medicine);
+    }
+
+    void notifyNewOperation(Operation operation) {
+        notification.addNewElement(operation);
+    }
+
+    void notifyChangedOperation(Operation operation) {
+        notification.addChangedElement(operation);
+    }
+
+    void notifyDeletedOperation(Operation operation) {
+        notification.addDeletedElement(operation);
     }
 }

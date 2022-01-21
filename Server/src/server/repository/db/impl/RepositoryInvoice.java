@@ -13,6 +13,7 @@ import commonlib.domain.MeasurementUnit;
 import commonlib.domain.Medicine;
 import commonlib.domain.Operation;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -75,6 +76,31 @@ public class RepositoryInvoice implements DbRepository<Invoice, Long> {
         }
     }
 
+    private void addInvoiceItem(InvoiceItem item) throws Exception {
+        connection = DbConnectionFactory.getInstance().getConnection();
+
+        String query = "INSERT INTO invoice_items (invoiceId, orderNo, totalPrice, itemPrice, quantity, operationId, medicineId) VALUES(?,?,?,?,?,?,?)";
+        PreparedStatement statement = connection.prepareStatement(query);
+
+        statement.setLong(1, item.getInvoice().getId());
+        statement.setLong(2, item.getOrderNo());
+        statement.setBigDecimal(3, item.getTotalPrice());
+        statement.setBigDecimal(4, item.getItemPrice());
+        statement.setBigDecimal(5, item.getQuantity());
+        if (item.getOperation() != null) {
+            statement.setLong(6, item.getOperation().getId());
+        } else {
+            statement.setNull(6, Types.BIGINT);
+        }
+        if (item.getMedicine() != null) {
+            statement.setLong(7, item.getMedicine().getId());
+        } else {
+            statement.setNull(7, Types.BIGINT);
+        }
+        statement.executeUpdate();
+        statement.close();
+    }
+
     @Override
     public void add(Invoice invoice) throws Exception {
         connection = DbConnectionFactory.getInstance().getConnection();
@@ -95,26 +121,9 @@ public class RepositoryInvoice implements DbRepository<Invoice, Long> {
             Long invoiceID = rsKey.getLong(1);
             invoice.setId(invoiceID);
 
-            query = "INSERT INTO invoice_items (invoiceId, orderNo, price, quantity, operationId, medicineId) VALUES(?,?,?,?,?,?)";
-            statement = connection.prepareStatement(query);
             for (InvoiceItem item : invoice.getItems()) {
-
-                statement.setLong(1, invoice.getId());
-                statement.setLong(2, item.getOrderNo());
-                statement.setBigDecimal(3, item.getPrice());
-                statement.setBigDecimal(4, item.getQuantity());
-                if (item.getOperation() != null) {
-                    statement.setLong(5, item.getOperation().getId());
-                } else {
-                    statement.setNull(5, Types.BIGINT);
-                }
-                if (item.getMedicine() != null) {
-                    statement.setLong(6, item.getMedicine().getId());
-                } else {
-                    statement.setNull(6, Types.BIGINT);
-                }
-
-                statement.executeUpdate();
+                item.setInvoice(invoice);
+                addInvoiceItem(item);
             }
         } else {
             throw new Exception("Invoice id is not generated");
@@ -129,15 +138,21 @@ public class RepositoryInvoice implements DbRepository<Invoice, Long> {
             connection = DbConnectionFactory.getInstance().getConnection();
             Statement statement = connection.createStatement();
             statement.executeUpdate(upit);
-            for (InvoiceItem invoiceItem : getInvoiceItems(invoice.getId())) {
+            List<InvoiceItem> items = getInvoiceItems(invoice.getId());
+            for (InvoiceItem invoiceItem : items) {
                 if (!invoice.getItems().contains(invoiceItem)) {
                     upit = "DELETE FROM invoice_items WHERE invoiceId = " + invoice.getId() + " AND orderNo = " + invoiceItem.getOrderNo();
                     statement.executeUpdate(upit);
                 }
             }
             for (InvoiceItem item : invoice.getItems()) {
-                upit = "UPDATE invoice_items SET quantity = " + item.getQuantity() + ", price = " + item.getPrice() + " WHERE invoiceId = " + invoice.getId() + " AND orderNo = " + item.getOrderNo();
+                upit = "UPDATE invoice_items SET quantity = " + item.getQuantity() + ", totalPrice = " + item.getTotalPrice() + " WHERE invoiceId = " + invoice.getId() + " AND orderNo = " + item.getOrderNo();
                 statement.executeUpdate(upit);
+            }
+            for (InvoiceItem item : invoice.getItems()) {
+                if (!items.contains(item)) {
+                    addInvoiceItem(item);
+                }
             }
 
             statement.close();
@@ -160,7 +175,7 @@ public class RepositoryInvoice implements DbRepository<Invoice, Long> {
     public List<InvoiceItem> getInvoiceItems(long id) throws Exception {
         try {
             List<InvoiceItem> items = new ArrayList<>();
-            String upit = "SELECT i.orderNo, i.price, i.quantity, i.operationId, i.medicineId, m.id, m.name, m.measurementUnit, m.availableQuantity, m.price, o.id, o.name, o.price FROM invoice_items i LEFT JOIN medicines m ON(i.medicineId = m.id) LEFT JOIN operations o ON(i.operationId = o.id) WHERE i.invoiceId = " + id;
+            String upit = "SELECT i.orderNo, i.totalPrice, i.itemPrice, i.quantity, i.operationId, i.medicineId, m.id, m.name, m.measurementUnit, m.availableQuantity, m.price, o.id, o.name, o.price FROM invoice_items i LEFT JOIN medicines m ON(i.medicineId = m.id) LEFT JOIN operations o ON(i.operationId = o.id) WHERE i.invoiceId = " + id;
             connection = DbConnectionFactory.getInstance().getConnection();
             Statement statement = connection.createStatement();
             ResultSet rs = statement.executeQuery(upit);
@@ -171,7 +186,8 @@ public class RepositoryInvoice implements DbRepository<Invoice, Long> {
                 inv.setId(id);
                 item.setInvoice(inv);
                 item.setOrderNo(rs.getInt("i.orderNo"));
-                item.setPrice(rs.getBigDecimal("i.price"));
+                item.setTotalPrice(rs.getBigDecimal("i.totalPrice"));
+                item.setItemPrice(rs.getBigDecimal("i.itemPrice"));
                 item.setQuantity(rs.getBigDecimal("i.quantity"));
                 Medicine m;
                 try {
@@ -201,6 +217,27 @@ public class RepositoryInvoice implements DbRepository<Invoice, Long> {
             rs.close();
             statement.close();
             return items;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            throw ex;
+        }
+    }
+
+    public BigDecimal getQuantity(InvoiceItem item) throws Exception {
+        try {
+            String upit = "SELECT quantity FROM invoice_items WHERE invoiceId = " + item.getInvoice().getId() + " AND orderNo = " + item.getOrderNo();
+            connection = DbConnectionFactory.getInstance().getConnection();
+            Statement statement = connection.createStatement();
+            ResultSet rs = statement.executeQuery(upit);
+            BigDecimal quantity = null;
+            if(rs.next()){
+                quantity = rs.getBigDecimal("quantity");
+            } else{
+                throw new Exception("InvoiceItem not found.");
+            }
+            rs.close();
+            statement.close();
+            return quantity;
         } catch (SQLException ex) {
             ex.printStackTrace();
             throw ex;

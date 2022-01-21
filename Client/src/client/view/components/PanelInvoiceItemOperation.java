@@ -6,6 +6,11 @@
 package client.view.components;
 
 import client.communication.Communication;
+import client.listeners.NotificationListener;
+import client.view.controller.Controller;
+import commonlib.domain.Invoice;
+import commonlib.domain.InvoiceItem;
+import commonlib.domain.Medicine;
 import commonlib.domain.Operation;
 import java.util.List;
 import javax.swing.JOptionPane;
@@ -15,6 +20,8 @@ import javax.swing.JOptionPane;
  * @author ANA
  */
 public class PanelInvoiceItemOperation extends javax.swing.JPanel {
+
+    private List<Operation> operations;
 
     /**
      * Creates new form PanelInvoiceItemOperation
@@ -27,6 +34,46 @@ public class PanelInvoiceItemOperation extends javax.swing.JPanel {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Došlo je do greške", "Greška", JOptionPane.ERROR_MESSAGE);
         }
+        Controller.getInstance().setNotificationListener(new NotificationListener() {
+            @Override
+            public void changedOperation(Operation operation) {
+                for (Operation operation1 : operations) {
+                    if (operation1.getId().equals(operation.getId())) {
+                        operation1.setName(operation.getName());
+                        operation1.setPrice(operation.getPrice());
+                        break;
+                    }
+                }
+                if (cmbOperation.getSelectedItem() != null && ((Operation) cmbOperation.getSelectedItem()).getId().equals(operation.getId())) {
+                    txtPrice.setText(operation.getPrice().toString());
+                }
+            }
+
+            @Override
+            public void deletedOperation(Operation operation) {
+                try {
+                    for (Operation op : operations) {
+                        if (operation.getId().equals(op.getId())) {
+                            if (cmbOperation.getSelectedItem() != null && ((Operation) cmbOperation.getSelectedItem()).getId().equals(op.getId())) {
+                                txtPrice.setText("");
+                            }
+                            cmbOperation.removeItem(operation);
+                            operations.remove(operation);
+                            break;
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void newOperationAdded(Operation operation) {
+                operations.add(operation);
+                cmbOperation.addItem(operation);
+            }
+
+        });
     }
 
     /**
@@ -101,16 +148,16 @@ public class PanelInvoiceItemOperation extends javax.swing.JPanel {
     // End of variables declaration//GEN-END:variables
 
     private void prepareView() throws Exception {
-        List<Operation> operations = (List<Operation>) Communication.getInstance().getAllOperations().getResult();
+        operations = (List<Operation>) Communication.getInstance().getAllOperations().getResult();
         for (Operation operation : operations) {
             cmbOperation.addItem(operation);
         }
     }
-    
-    public Operation getSelectedOperation() throws Exception{
+
+    public Operation getSelectedOperation() throws Exception {
         if (cmbOperation.getItemCount() > 0) {
             return (Operation) cmbOperation.getSelectedItem();
-        } else{
+        } else {
             throw new Exception("Ne postoji nijedna operacija.");
         }
     }

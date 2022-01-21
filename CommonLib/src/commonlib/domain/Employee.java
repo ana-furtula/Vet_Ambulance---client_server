@@ -15,7 +15,7 @@ import java.util.Objects;
  *
  * @author ANA
  */
-public class Employee implements Serializable{
+public class Employee implements Serializable, ModelElement{
 
     private Long id;
     private String firstName;
@@ -116,6 +116,54 @@ public class Employee implements Serializable{
     @Override
     public String toString() {
         return firstName + " " + lastName;
+    }
+    
+    @Override
+    public String getAtrValues() {
+        return "'" + firstName + "'" +", " + lastName + ", " + "'" + JMBG +"'" + ", " + "'" + username +"'" + ", " + "'" + password +"'";
+    }
+
+    @Override
+    public String setAtrValues() {
+        return "firstname = " + "'" +firstName + "'" + ", " + "lastname = " + "'" +lastName + "'" + ", " + "jmbg = " + "'" +JMBG + "'" + ", " + "username = " + "'" +username + "'" + ", " + "password = " + "'" +password + "'" ; 
+    }
+
+    @Override
+    public String getDbChangeableColumns() {
+        return "firstname, lastname, jmbg, username, password";
+    }
+    
+    @Override
+    public String getTableName() {
+        return "employees";
+    }
+
+    @Override
+    public String getWhereCondition() {
+        return "id= "+id;
+    }
+
+    @Override
+    public String getNameByColumn(int column) {
+        String[] names = new String[]{"id","firstname","lastname","jmbg", "username", "password"};
+        return names[column];
+    }
+
+    @Override
+    public ModelElement getNewRecord(ResultSet rs) throws SQLException {
+        Employee employee = new Employee();
+        employee.setId(rs.getLong("id"));
+        employee.setFirstName(rs.getString("firstname"));
+        employee.setLastName(rs.getString("lastname"));
+        employee.setJMBG(rs.getString("jmbg"));
+        employee.setUsername(rs.getString("username"));
+        employee.setPassword(rs.getString("password"));
+        return employee;
+    }
+
+    @Override
+    public void setId(ResultSet rs) throws Exception {
+        this.id = rs.getLong(1);
     }
     
 }

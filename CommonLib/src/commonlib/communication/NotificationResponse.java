@@ -7,63 +7,50 @@ package commonlib.communication;
 
 import commonlib.domain.Invoice;
 import commonlib.domain.Medicine;
+import commonlib.domain.ModelElement;
+import commonlib.domain.Operation;
 import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  *
  * @author ANA
  */
-public class NotificationResponse implements Serializable{
-    private Invoice newInvoice;
-    private Invoice changedInvoice;
-    private Medicine newMedicine;
-    private Medicine deletedMedicine;
-    private Medicine changedMedicine;
-    
+public class NotificationResponse implements Serializable {
+
+    private List<ModelElement> newElements;
+    private List<ModelElement> changedElements;
+    private List<ModelElement> deletedElements;
+
     public NotificationResponse() {
+        newElements = new LinkedList<>();
+        changedElements = new LinkedList<>();
+        deletedElements = new LinkedList<>();
     }
 
-    public Medicine getChangedMedicine() {
-        return changedMedicine;
+    public void addNewElement(ModelElement newElement) {
+        this.newElements.add(newElement);
     }
 
-    public void setChangedMedicine(Medicine changedMedicine) {
-        this.changedMedicine = changedMedicine;
-    }
-    
-    
-
-    public Medicine getDeletedMedicine() {
-        return deletedMedicine;
+    public void addChangedElement(ModelElement newElement) {
+        this.changedElements.add(newElement);
     }
 
-    public void setDeletedMedicine(Medicine deletedMedicine) {
-        this.deletedMedicine = deletedMedicine;
-    }
-    
-    public Invoice getNewInvoice() {
-        return newInvoice;
+    public void addDeletedElement(ModelElement newElement) {
+        this.deletedElements.add(newElement);
     }
 
-    public void setNewInvoice(Invoice newInvoice) {
-        this.newInvoice = newInvoice;
+    public List<ModelElement> getNewElements() {
+        return newElements;
     }
 
-    public Medicine getNewMedicine() {
-        return newMedicine;
+    public List<ModelElement> getChangedElements() {
+        return changedElements;
     }
 
-    public void setNewMedicine(Medicine newMedicine) {
-        this.newMedicine = newMedicine;
+    public List<ModelElement> getDeletedElements() {
+        return deletedElements;
     }
-
-    public Invoice getChangedInvoice() {
-        return changedInvoice;
-    }
-
-    public void setChangedInvoice(Invoice changedInvoice) {
-        this.changedInvoice = changedInvoice;
-    }
-    
     
 }

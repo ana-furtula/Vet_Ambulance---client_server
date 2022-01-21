@@ -280,4 +280,22 @@ public class Controller {
             notificationListener.deletedMedicine(medicine);
         }
     }
+    
+    public void notifyNewOperation(Operation operation) {
+        for (NotificationListener notificationListener : notificationListeners) {
+            notificationListener.newOperationAdded(operation);
+        }
+    }
+    
+    public void notifyChangedOperation(Operation operation) {
+        for (NotificationListener notificationListener : notificationListeners) {
+            notificationListener.changedOperation(operation);
+        }
+    }
+    
+    public void notifyDeletedOperation(Operation operation) {
+        for (NotificationListener notificationListener : notificationListeners) {
+            notificationListener.deletedOperation(operation);
+        }
+    }
 }

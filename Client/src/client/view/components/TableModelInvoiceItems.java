@@ -10,6 +10,9 @@ import commonlib.domain.InvoiceItem;
 import java.math.BigDecimal;
 import javax.swing.table.AbstractTableModel;
 import client.listeners.TableListener;
+import commonlib.domain.Medicine;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  *
@@ -17,7 +20,7 @@ import client.listeners.TableListener;
  */
 public class TableModelInvoiceItems extends AbstractTableModel {
 
-    private final Invoice invoice;
+    private Invoice invoice;
     private final String[] columnNames = new String[]{"Broj", "Proizvod/Usluga", "Cijena", "Količina", "Ukupno"};
     private final Class[] classNames = new Class[]{Integer.class, Object.class, BigDecimal.class, BigDecimal.class, BigDecimal.class};
     private int[] editableCells;
@@ -27,8 +30,8 @@ public class TableModelInvoiceItems extends AbstractTableModel {
         this.invoice = invoice;
     }
 
-    public void setTableErrorListener(TableListener tableErrorListener) {
-        this.tableListener = tableErrorListener;
+    public void setTableListener(TableListener tableListener) {
+        this.tableListener = tableListener;
     }
 
     @Override
@@ -65,39 +68,89 @@ public class TableModelInvoiceItems extends AbstractTableModel {
             case 3:
                 try {
                     BigDecimal newValue = new BigDecimal(aValue.toString());
+                    if (newValue.compareTo(BigDecimal.ZERO) == 0) {
+                        if (tableListener != null) {
+                            tableListener.errorHappened("Količina mora biti veća od 0.");
+                        }
+                        return;
+                    }
                     if (item.getQuantity().compareTo(newValue) == 0) {
                         return;
                     }
                     BigDecimal change;
+
                     if (item.getQuantity().compareTo(newValue) < 0) {
                         change = newValue.subtract(item.getQuantity());
                         if (item.getMedicine() != null) {
-                            if (item.getMedicine().getAvailableQuantity().compareTo(change) > 0) {
+                            if (item.getMedicine().getAvailableQuantity().compareTo(change) >= 0) {
                                 item.getMedicine().setAvailableQuantity(item.getMedicine().getAvailableQuantity().subtract(change));
+                                if (!item.getMedicine().getPrice().equals(item.getItemPrice())) {
+                                    InvoiceItem newItem = new InvoiceItem();
+                                    newItem.setInvoice(invoice);
+                                    newItem.setItemPrice(item.getMedicine().getPrice());
+                                    newItem.setMedicine(item.getMedicine());
+                                    newItem.setQuantity(change);
+                                    newItem.setTotalPrice(newItem.getQuantity().add(newItem.getItemPrice()));
+                                    addInvoiceItem(newItem);
+                                    return;
+                                }
+
                             } else {
-                                if(tableListener!=null){
+                                if (tableListener != null) {
                                     tableListener.errorHappened("Ne postoji dovoljno lijekova na zalihama.");
                                 }
                                 return;
                             }
+                        } else {
+
+                            if (!item.getOperation().getPrice().equals(item.getItemPrice())) {
+                                InvoiceItem newItem = new InvoiceItem();
+                                newItem.setInvoice(item.getInvoice());
+                                newItem.setItemPrice(item.getOperation().getPrice());
+                                newItem.setOperation(item.getOperation());
+                                newItem.setQuantity(change);
+                                newItem.setTotalPrice(newItem.getQuantity().multiply(newItem.getItemPrice()));
+                                addInvoiceItem(newItem);
+                                return;
+                            }
                         }
+                        item.setQuantity(newValue);
+                        item.setTotalPrice(item.getItemPrice().multiply(item.getQuantity()));
+                        invoice.setTotalValue(invoice.getTotalValue().add(item.getItemPrice().multiply(change)));
                     } else {
                         change = item.getQuantity().subtract(newValue);
                         if (item.getMedicine() != null) {
                             item.getMedicine().setAvailableQuantity(item.getMedicine().getAvailableQuantity().add(change));
+                            if (!item.getMedicine().getPrice().equals(item.getItemPrice())) {
+                                InvoiceItem newItem = new InvoiceItem();
+                                newItem.setInvoice(invoice);
+                                newItem.setItemPrice(item.getMedicine().getPrice());
+                                newItem.setMedicine(item.getMedicine());
+                                newItem.setQuantity(change);
+                                newItem.setTotalPrice(newItem.getQuantity().add(newItem.getItemPrice()));
+                                addInvoiceItem(newItem);
+                                return;
+                            }
+                        } else {
+                            if (!item.getOperation().getPrice().equals(item.getItemPrice())) {
+                                InvoiceItem newItem = new InvoiceItem();
+                                newItem.setInvoice(invoice);
+                                newItem.setItemPrice(item.getOperation().getPrice());
+                                newItem.setOperation(item.getOperation());
+                                newItem.setQuantity(change);
+                                newItem.setTotalPrice(newItem.getQuantity().multiply(newItem.getItemPrice()));
+                                addInvoiceItem(newItem);
+                                return;
+                            }
                         }
+                        item.setQuantity(newValue);
+                        item.setTotalPrice(item.getItemPrice().multiply(item.getQuantity()));
+                        invoice.setTotalValue(invoice.getTotalValue().subtract(item.getItemPrice().multiply(change)));
                     }
-                    item.setQuantity(newValue);
-                    invoice.setTotalValue(invoice.getTotalValue().subtract(item.getPrice()));
-                    if (item.getMedicine() != null) {
-                        item.setPrice(newValue.multiply(item.getMedicine().getPrice()));
-                    } else {
-                        item.setPrice(newValue.multiply(item.getOperation().getPrice()));
-                    }
-                    invoice.setTotalValue(invoice.getTotalValue().add(item.getPrice()));
+
                     fireTableRowsUpdated(rowIndex, rowIndex);
-                    if(tableListener!=null){
-                        tableListener.valueChanged();
+                    if (tableListener != null) {
+                        tableListener.valueChanged(invoice.getTotalValue());
                     }
                 } catch (Exception ex) {
                 }
@@ -118,14 +171,11 @@ public class TableModelInvoiceItems extends AbstractTableModel {
                 }
                 return item.getOperation();
             case 2:
-                if (item.getMedicine() != null) {
-                    return item.getMedicine().getPrice();
-                }
-                return item.getOperation().getPrice();
+                return item.getItemPrice();
             case 3:
                 return item.getQuantity();
             case 4:
-                return item.getPrice();
+                return item.getTotalPrice();
             default:
                 return null;
         }
@@ -145,17 +195,28 @@ public class TableModelInvoiceItems extends AbstractTableModel {
     }
 
     public void addInvoiceItem(InvoiceItem item) {
-        item.setOrderNo(invoice.getItems().size() + 1);
+        int max = 0;
+        for (InvoiceItem item1 : invoice.getItems()) {
+            if (item1.getOrderNo() > max) {
+                max = item1.getOrderNo();
+            }
+        }
+        item.setOrderNo(max + 1);
         invoice.getItems().add(item);
-        // TODO: azurirati total za invoice
-        invoice.setTotalValue(invoice.getTotalValue().add(item.getPrice()));
+        invoice.setTotalValue(invoice.getTotalValue().add(item.getTotalPrice()));
+        if (tableListener != null) {
+            tableListener.valueChanged(invoice.getTotalValue());
+        }
         fireTableRowsInserted(invoice.getItems().size() - 1, invoice.getItems().size() - 1);
     }
 
     public void removeInvoiceItem(int row) {
         InvoiceItem item = invoice.getItems().get(row);
         invoice.getItems().remove(item);
-        invoice.setTotalValue(invoice.getTotalValue().subtract(item.getPrice()));
+        invoice.setTotalValue(invoice.getTotalValue().subtract(item.getTotalPrice()));
+        if (tableListener != null) {
+            tableListener.valueChanged(invoice.getTotalValue());
+        }
         fireTableRowsDeleted(row, row);
     }
 

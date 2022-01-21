@@ -5,11 +5,13 @@
  */
 package client.listeners;
 
+import java.math.BigDecimal;
+
 /**
  *
  * @author ANA
  */
 public interface TableListener {
     void errorHappened(String error);
-    void valueChanged();
+    void valueChanged(BigDecimal total);
 }

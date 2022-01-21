@@ -7,9 +7,16 @@ package server.so.invoice;
 
 import commonlib.domain.Invoice;
 import commonlib.domain.InvoiceItem;
+import java.math.BigDecimal;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import server.repository.db.DbRepository;
+import server.repository.db.impl.Repository;
 import server.repository.db.impl.RepositoryInvoice;
+import server.repository.db.impl.RepositoryMedicine;
 import server.so.AbstractSO;
+import server.so.medicine.CheckAvailableQuantitySO;
 import server.so.medicine.UpdateAvailableQuantitySO;
 import server.validation.ValidationException;
 import server.validation.Validator;
@@ -20,9 +27,13 @@ import server.validation.Validator;
  */
 public class UpdateInvoiceSO extends AbstractSO {
 
-    private final DbRepository repositoryInvoice;
+    private final DbRepository repository;
+    private final RepositoryMedicine repositoryMedicine;
+    private final RepositoryInvoice repositoryInvoice;
 
     public UpdateInvoiceSO() {
+        this.repository = new Repository();
+        this.repositoryMedicine = new RepositoryMedicine();
         this.repositoryInvoice = new RepositoryInvoice();
     }
 
@@ -37,6 +48,10 @@ public class UpdateInvoiceSO extends AbstractSO {
                     .validateNotNull(invoice.getClient(), "Neophodno je unijeti klijenta.")
                     .validateNotNull(invoice.getEmployee(), "Neophodno je unijeti zaposlenog koji je izdao racun.")
                     .validatePrice(invoice.getTotalValue(), "Cijena ne može biti manja od 0.").throwIfInvalide();
+            if (invoice.getItems() == null || invoice.getItems().size() == 0) {
+                throw new Exception("Račun mora sadržati barem jednu stavku.");
+            }
+            checkAvailableQuantities((Invoice) param);
         } catch (ValidationException e) {
             throw e;
         }
@@ -44,18 +59,53 @@ public class UpdateInvoiceSO extends AbstractSO {
 
     @Override
     protected void executeTransaction(Object param) throws Exception {
-        repositoryInvoice.edit((Invoice) param);
+        repository.edit((Invoice) param);
+        AbstractSO getAllInvoiceItems = new GetAllInvoiceItemsSO(((Invoice) param).getId());
+        List<InvoiceItem> items = new LinkedList<>();
+        getAllInvoiceItems.execute(items);
+
+        Iterator<InvoiceItem> iterator = items.iterator();
+        while (iterator.hasNext()) {
+            InvoiceItem item = iterator.next();
+            if (!((Invoice) param).getItems().contains(item)) {
+                repository.delete(item);
+                iterator.remove();
+            }
+        }
+
+        iterator = ((Invoice) param).getItems().iterator();
+        while (iterator.hasNext()) {
+            repository.edit(iterator.next());
+        }
+
+        iterator = ((Invoice) param).getItems().iterator();
+        while (iterator.hasNext()) {
+            InvoiceItem item = iterator.next();
+            if (!items.contains(item)) {
+                repository.add(item);
+            }
+        }
+
         updateMedicinesQuantities((Invoice) param);
     }
 
     @Override
     protected void commitTransaction() throws Exception {
-        repositoryInvoice.commit();
+        repository.commit();
     }
 
     @Override
     protected void rollbackTransaction() throws Exception {
-        repositoryInvoice.rollback();
+        repository.rollback();
+    }
+
+    private void checkAvailableQuantities(Invoice invoice) throws Exception {
+        AbstractSO checkAvailableQuantitySO = new CheckAvailableQuantitySO();
+        for (InvoiceItem item : invoice.getItems()) {
+            if (item.getMedicine() != null) {
+                checkAvailableQuantitySO.execute(item);
+            }
+        }
     }
 
     private void updateMedicinesQuantities(Invoice invoice) throws Exception {

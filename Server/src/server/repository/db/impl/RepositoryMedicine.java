@@ -33,7 +33,6 @@ public class RepositoryMedicine implements DbRepository<Medicine, Long> {
     @Override
     public List<Medicine> getAll() throws Exception {
         try {
-
             List<Medicine> medicines = new ArrayList<>();
             String upit = "SELECT id, name, price, availableQuantity, measurementUnit FROM medicines";
             connection = DbConnectionFactory.getInstance().getConnection();
@@ -112,14 +111,35 @@ public class RepositoryMedicine implements DbRepository<Medicine, Long> {
     public Medicine getById(Long k) throws Exception {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
-    
-    public void updateAvailableQuantity(Medicine medicine) throws Exception{
+
+    public void updateAvailableQuantity(Medicine medicine) throws Exception {
         try {
             String upit = "UPDATE medicines SET availableQuantity = " + medicine.getAvailableQuantity() + " WHERE id = " + medicine.getId();
             connection = DbConnectionFactory.getInstance().getConnection();
             Statement statement = connection.createStatement();
             statement.executeUpdate(upit);
             statement.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            throw ex;
+        }
+    }
+
+    public BigDecimal getAvailableQuantity(Long id) throws Exception {
+        try {
+            String upit = "SELECT availableQuantity FROM medicines WHERE id = " + id;
+            connection = DbConnectionFactory.getInstance().getConnection();
+            Statement statement = connection.createStatement();
+            ResultSet rs = statement.executeQuery(upit);
+            BigDecimal quantity = null;
+            if(rs.next()){
+                quantity = rs.getBigDecimal("availableQuantity");
+            } else{
+                throw new Exception("Medicine not found.");
+            }
+            rs.close();
+            statement.close();
+            return quantity;
         } catch (SQLException ex) {
             ex.printStackTrace();
             throw ex;

@@ -7,6 +7,7 @@ package commonlib.domain;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -15,7 +16,7 @@ import java.util.Objects;
  *
  * @author ANA
  */
-public class Medicine implements Serializable{
+public class Medicine implements Serializable, ModelElement{
 
     private Long id;
     private String name;
@@ -115,6 +116,52 @@ public class Medicine implements Serializable{
     public void setMeasurementUnit(MeasurementUnit measurementUnit) {
         this.measurementUnit = measurementUnit;
     }
+
+    @Override
+    public String getAtrValues() {
+        return "'" + name + "'" +", " + price + ", " + availableQuantity +", " + "'" + measurementUnit.toString() +"'";
+    }
+
+    @Override
+    public String setAtrValues() {
+        return "name = " + "'" +name + "'" + ", " + "price = "+ price +", "+" availableQuantity = "+ availableQuantity +", "+"measurementUnit= "+ "'" + measurementUnit.toString()+"'";
+    }
+
+    @Override
+    public String getDbChangeableColumns() {
+        return "name, price, availableQuantity, measurementUnit";
+    }
     
+    @Override
+    public String getTableName() {
+        return "medicines";
+    }
+
+    @Override
+    public String getWhereCondition() {
+        return "id= "+id;
+    }
+
+    @Override
+    public String getNameByColumn(int column) {
+        String[] names = new String[]{"id","name","price","availableQuantity","measurementUnit"};
+        return names[column];
+    }
+
+    @Override
+    public ModelElement getNewRecord(ResultSet rs) throws SQLException {
+        Medicine m = new Medicine();
+        m.setId(rs.getLong("id"));
+        m.setName(rs.getString("name"));
+        m.setPrice(rs.getBigDecimal("price"));
+        m.setMeasurementUnit(MeasurementUnit.valueOf(rs.getString("measurementUnit")));
+        m.setAvailableQuantity(rs.getBigDecimal("availableQuantity"));
+        return m;
+    }
+
+    @Override
+    public void setId(ResultSet rs) throws Exception {
+        this.id = rs.getLong(1);
+    }
     
 }

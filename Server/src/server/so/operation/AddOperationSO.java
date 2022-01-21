@@ -7,6 +7,7 @@ package server.so.operation;
 
 import commonlib.domain.Operation;
 import server.repository.db.DbRepository;
+import server.repository.db.impl.Repository;
 import server.repository.db.impl.RepositoryOperation;
 import server.so.AbstractSO;
 import server.validation.ValidationException;
@@ -21,7 +22,7 @@ public class AddOperationSO extends AbstractSO {
     private final DbRepository repositoryOperation;
 
     public AddOperationSO() {
-        this.repositoryOperation = new RepositoryOperation();
+        this.repositoryOperation = new Repository();
     }
 
     @Override

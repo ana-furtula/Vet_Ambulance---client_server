@@ -58,7 +58,13 @@ public class FormInvoicesView extends javax.swing.JDialog {
             @Override
             public void newInvoiceAdded(Invoice invoice) {
                 TableModelInvoices model = (TableModelInvoices) tblInvoices.getModel();
-                model.add(invoice);
+                if (!txtSearch.getText().equals("dd-MM-yyyy")) {
+                    if (invoice.getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")).startsWith(txtSearch.getText())) {
+                        model.add(invoice);
+                    }
+                } else{
+                    model.add(invoice);
+                }
             }
         });
     }

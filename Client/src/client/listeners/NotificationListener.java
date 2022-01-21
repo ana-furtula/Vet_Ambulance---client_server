@@ -7,6 +7,7 @@ package client.listeners;
 
 import commonlib.domain.Invoice;
 import commonlib.domain.Medicine;
+import commonlib.domain.Operation;
 
 /**
  *
@@ -18,4 +19,7 @@ public interface NotificationListener {
     default void deletedMedicine(Medicine medicine){}
     default void newInvoiceAdded(Invoice invoice){}
     default void invoiceChanged(Invoice invoice){}
+    default void newOperationAdded(Operation operation){}
+    default void changedOperation(Operation operation){}
+    default void deletedOperation(Operation operation){}
 }

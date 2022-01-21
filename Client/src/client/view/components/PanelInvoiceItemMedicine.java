@@ -6,6 +6,10 @@
 package client.view.components;
 
 import client.communication.Communication;
+import client.listeners.NotificationListener;
+import client.view.controller.Controller;
+import commonlib.domain.Invoice;
+import commonlib.domain.InvoiceItem;
 import commonlib.domain.Medicine;
 import java.math.BigDecimal;
 import java.util.List;
@@ -18,6 +22,9 @@ import javax.swing.JOptionPane;
  * @author ANA
  */
 public class PanelInvoiceItemMedicine extends javax.swing.JPanel {
+
+    private List<Medicine> medicines;
+
     /**
      * Creates new form PanelInvoiceItemMedicine
      */
@@ -28,6 +35,99 @@ public class PanelInvoiceItemMedicine extends javax.swing.JPanel {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Došlo je do greške", "Greška", JOptionPane.ERROR_MESSAGE);
         }
+        Controller.getInstance().setNotificationListener(new NotificationListener() {
+            @Override
+            public void invoiceChanged(Invoice invoice) {
+                try {
+                    for (InvoiceItem item : invoice.getItems()) {
+                        if (item.getMedicine() != null) {
+                            for (Medicine medicine : medicines) {
+                                if (medicine.getId().equals(item.getMedicine().getId())) {
+                                    medicine.setAvailableQuantity(item.getMedicine().getAvailableQuantity());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (cmbMedicine.getSelectedItem() != null) {
+                        txtAvailableQuantity.setText(((Medicine) cmbMedicine.getSelectedItem()).getAvailableQuantity().toString());
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void newInvoiceAdded(Invoice invoice) {
+                try {
+                    for (InvoiceItem item : invoice.getItems()) {
+                        if (item.getMedicine() != null) {
+                            for (Medicine medicine : medicines) {
+                                if (medicine.getId().equals(item.getMedicine().getId())) {
+                                    medicine.setAvailableQuantity(item.getMedicine().getAvailableQuantity());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (cmbMedicine.getSelectedItem() != null) {
+                        txtAvailableQuantity.setText(((Medicine) cmbMedicine.getSelectedItem()).getAvailableQuantity().toString());
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void changedMedicine(Medicine medicine1) {
+                try {
+                    for (Medicine medicine : medicines) {
+                        if (medicine.getId().equals(medicine1.getId())) {
+                            medicine.setAvailableQuantity(medicine1.getAvailableQuantity());
+                            medicine.setMeasurementUnit(medicine1.getMeasurementUnit());
+                            medicine.setName(medicine1.getName());
+                            medicine.setPrice(medicine1.getPrice());
+                            break;
+                        }
+                    }
+                    if (cmbMedicine.getSelectedItem() != null && ((Medicine) cmbMedicine.getSelectedItem()).getId().equals(medicine1.getId())) {
+                        txtAvailableQuantity.setText(medicine1.getAvailableQuantity().toString());
+                        txtMeasurementUnit.setText(medicine1.getMeasurementUnit().toString());
+                        txtPrice.setText(medicine1.getPrice().toString());
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void deletedMedicine(Medicine medicine1) {
+                try {
+                    for (Medicine medicine : medicines) {
+                        if (medicine.getId().equals(medicine1.getId())) {
+                            if (cmbMedicine.getSelectedItem() != null && ((Medicine) cmbMedicine.getSelectedItem()).getId().equals(medicine.getId())) {
+                                txtAvailableQuantity.setText("");
+                                txtMeasurementUnit.setText("");
+                                txtPrice.setText("");
+                                txtQuantityForItem.setText("");
+                            }
+                            cmbMedicine.removeItem(medicine);
+                            medicines.remove(medicine);
+                            break;
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void newMedicineAdded(Medicine medicine) {
+                medicines.add(medicine);
+                cmbMedicine.addItem(medicine);
+            }
+
+        });
     }
 
     /**
@@ -164,25 +264,47 @@ public class PanelInvoiceItemMedicine extends javax.swing.JPanel {
     // End of variables declaration//GEN-END:variables
 
     private void prepareView() throws Exception {
-        List<Medicine> medicines = (List<Medicine>) Communication.getInstance().getAllMedicines().getResult();
+        medicines = Controller.getInstance().getAllMedicines();
+
         for (Medicine medicine : medicines) {
             cmbMedicine.addItem(medicine);
         }
+
     }
 
     public Medicine getSelectedMedicine() throws Exception {
         if (cmbMedicine.getItemCount() > 0) {
             return (Medicine) cmbMedicine.getSelectedItem();
-        } else{
+        } else {
             throw new Exception("Ne postoji nijedan lijek.");
         }
     }
-    
+
     public String getSelectedQuantity() throws Exception {
         return txtQuantityForItem.getText().trim();
     }
-    
-    public void setSelectedQuantityError(String error){
+
+    public void setSelectedQuantityError(String error) {
         lblErrorQuantity.setText(error);
     }
+
+    public void updateAvailableQuantity(BigDecimal leftQuantity, Medicine med) {
+        for (Medicine medicine : medicines) {
+            if (medicine.getId().equals(med.getId())) {
+                medicine.setAvailableQuantity(leftQuantity);
+                break;
+            }
+        }
+    }
+    
+    public BigDecimal getAvailableQuantity(Medicine med) {
+        for (Medicine medicine : medicines) {
+            if (medicine.getId().equals(med.getId())) {
+                return medicine.getAvailableQuantity();
+            }
+        }
+        return BigDecimal.valueOf(-1);
+    }
+    
+    
 }

@@ -164,7 +164,6 @@ public class TableModelMedicines extends AbstractTableModel {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-
     }
 
     public List<Medicine> getMedicines() {
